@@ -1,0 +1,142 @@
+library(dplyr)
+df <- read.csv("CoinToss/analyses/data-agg.csv",header=T)
+n <- nrow(df)
+dfHeads <- df[,-c(2,4)] # heads to heads
+dfTails <- df[,-c(1,3)] # tails to heads
+dfTails[,1] <- dfTails[,2]-dfTails[,1] # tails to tails
+names(dfHeads) <- names(dfTails) <- c("y","m","person","coin")
+start <- rep(c("heads","tails"),c(n,n))
+df <- rbind(dfHeads,dfTails)
+df$person <- factor(df$person); df$coin <- factor(df$coin); df$start <- factor(start)
+
+df$personNumber <- as.numeric(factor(df$person))
+df$coinNumber <- as.numeric(factor(df$coin))
+glmIntercept = glm(cbind(y,m-y)~1,family=binomial,data=df)
+glmTotal = glm(cbind(y,m-y)~1+person+coin,family=binomial,data=df)
+glmPerson = glm(cbind(y,m-y)~1+person,family=binomial,data=df)
+glmCoin = glm(cbind(y,m-y)~1+coin,family=binomial,data=df)
+
+dfStart <- df
+dfStart <- dfStart %>%
+       group_by(start) %>%
+       summarise(across(c(y,m), sum))
+results <- apply(dfStart, 1, function(row){
+       y <- row["m"]
+       x <- row["y"]
+       binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+   })
+dfStart$p_values <- sapply(results, function(res) res$p.value)
+dfStart$mean  <- dfStart$y / dfStart$m
+
+dfPerson <- df %>%
+       group_by(person) %>%
+       summarise(across(c(y,m), sum))
+results <- apply(dfPerson, 1, function(row){
+       x <- row["y"]
+       y <- row["m"]
+       binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+   })
+dfPerson$p_values <- sapply(results, function(res) res$p.value)
+dfPerson$mean <- dfPerson$y / dfPerson$m
+
+dfPersonHeads <- dfHeads %>%
+  group_by(person) %>%
+  summarise(across(c(y,m), sum))
+results <- apply(dfPersonHeads, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfPersonHeads$p_values <- sapply(results, function(res) res$p.value)
+dfPersonHeads$mean <- dfPersonHeads$y / dfPersonHeads$m
+
+dfPersonTails <- dfTails %>%
+  group_by(person) %>%
+  summarise(across(c(y,m), sum))
+results <- apply(dfPersonTails, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfPersonTails$p_values <- sapply(results, function(res) res$p.value)
+dfPersonTails$mean <- dfPersonTails$y / dfPersonTails$m
+
+dfCoin <- df %>%
+       group_by(coin) %>%
+       summarise(across(c(y,m), sum))
+results <- apply(dfCoin, 1, function(row){
+       x <- row["y"]
+       y <- row["m"]
+       binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+   })
+dfCoin$p_values <- sapply(results, function(res) res$p.value)
+dfCoin$mean <- dfCoin$y / dfCoin$m
+
+dfCoinHeads <- dfHeads %>%
+  group_by(coin) %>%
+  summarise(across(c(y,m), sum))
+results <- apply(dfCoinHeads, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfCoinHeads$p_values <- sapply(results, function(res) res$p.value)
+dfCoinHeads$mean <- dfCoinHeads$y / dfCoinHeads$m
+
+dfCoinTails <- dfTails %>%
+  group_by(coin) %>%
+  summarise(across(c(y,m), sum))
+results <- apply(dfCoinTails, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfCoinTails$p_values <- sapply(results, function(res) res$p.value)
+dfCoinTails$mean <- dfCoinTails$y / dfCoinTails$m
+
+results <- apply(df, 1, function(row){
+       x <- row["y"]
+       y <- row["m"]
+       binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+   })
+df$p_values <- sapply(results, function(res) res$p.value)
+df$mean <- df$y / df$m
+
+results <- apply(dfHeads, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfHeads$p_values <- sapply(results, function(res) res$p.value)
+dfHeads$mean <- dfHeads$y / dfHeads$m
+
+results <- apply(dfTails, 1, function(row){
+  x <- row["y"]
+  y <- row["m"]
+  binom.test(as.numeric(x), as.numeric(y), p=0.5, alternative = "two.sided", conf.level=0.95)
+})
+dfTails$p_values <- sapply(results, function(res) res$p.value)
+dfTails$mean <- dfTails$y / dfTails$m
+
+
+hist(df$mean)
+hist(dfHeads$mean)
+hist(dfTails$mean)
+hist(dfPerson$mean)
+hist(dfPersonHeads$mean)
+hist(dfPersonTails$mean)
+hist(dfCoin$mean)
+hist(dfCoinHeads$mean)
+hist(dfCoinTails$mean)
+boxplot(df$mean, dfHeads$mean, dfTails$mean, dfPerson$mean, dfPersonHeads$mean, dfPersonTails$mean, dfCoin$mean, dfCoinHeads$mean, dfCoinTails$mean, names=c('Total', 'TotalHeads', 'TotalTails', 'Person', 'PersonHeads', 'PersonTails', 'Coin', 'CoinHeads', 'CoinTails'), main='Distribution of success probabilities')
+
+anova(glmIntercept, glmPerson, glmCoin, glmTotal, test = "LRT")
+
+plot(df$mean, fitted(glmTotal))
+abline(c(0,1), col="red")
+abline(lm(df$mean ~ fitted(glmTotal)))
+plot(df$mean, fitted(glmTotal)-df$mean)
+plot(df$coin, fitted(glmTotal)-df$mean)
+plot(df$person, fitted(glmTotal)-df$mean)
+
+step(glmTotal, direction = "both", trace = 0)

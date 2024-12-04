@@ -128,6 +128,16 @@ df <- df[df$person != "JanYang", ]
 df <- df[df$coin != "0.50SGD", ]
 df <- df[df$coin != "0.02EUR", ]
 
+dfHeads <- dfHeads[dfHeads$person != "TianqiPeng", ]
+dfHeads <- dfHeads[dfHeads$person != "JanYang", ]
+dfHeads <- dfHeads[dfHeads$coin != "0.50SGD", ]
+dfHeads <- dfHeads[dfHeads$coin != "0.01GBP", ]
+
+dfTails <- dfTails[dfTails$person != "TianqiPeng", ]
+dfTails <- dfTails[dfTails$coin != "0.02EUR", ]
+dfTails <- dfTails[dfTails$coin != "0.20CHF", ]
+dfTails <- dfTails[dfTails$coin != "2INR", ]
+
 glmIntercept = glm(cbind(y,m-y)~1,family=binomial,data=df)
 glmTotal = glm(cbind(y,m-y)~1+person+coin,family=binomial,data=df)
 glmPerson = glm(cbind(y,m-y)~1+person,family=binomial,data=df)

@@ -9,13 +9,6 @@ start <- rep(c("heads","tails"),c(n,n))
 df <- rbind(dfHeads,dfTails)
 df$person <- factor(df$person); df$coin <- factor(df$coin); df$start <- factor(start)
 
-df$personNumber <- as.numeric(factor(df$person))
-df$coinNumber <- as.numeric(factor(df$coin))
-glmIntercept = glm(cbind(y,m-y)~1,family=binomial,data=df)
-glmTotal = glm(cbind(y,m-y)~1+person+coin,family=binomial,data=df)
-glmPerson = glm(cbind(y,m-y)~1+person,family=binomial,data=df)
-glmCoin = glm(cbind(y,m-y)~1+coin,family=binomial,data=df)
-
 dfStart <- df
 dfStart <- dfStart %>%
        group_by(start) %>%
@@ -118,7 +111,6 @@ results <- apply(dfTails, 1, function(row){
 dfTails$p_values <- sapply(results, function(res) res$p.value)
 dfTails$mean <- dfTails$y / dfTails$m
 
-
 hist(df$mean)
 hist(dfHeads$mean)
 hist(dfTails$mean)
@@ -130,13 +122,52 @@ hist(dfCoinHeads$mean)
 hist(dfCoinTails$mean)
 boxplot(df$mean, dfHeads$mean, dfTails$mean, dfPerson$mean, dfPersonHeads$mean, dfPersonTails$mean, dfCoin$mean, dfCoinHeads$mean, dfCoinTails$mean, names=c('Total', 'TotalHeads', 'TotalTails', 'Person', 'PersonHeads', 'PersonTails', 'Coin', 'CoinHeads', 'CoinTails'), main='Distribution of success probabilities')
 
+#Remove outliers
+df <- df[df$person != "TianqiPeng", ]
+df <- df[df$person != "JanYang", ]
+df <- df[df$coin != "0.50SGD", ]
+df <- df[df$coin != "0.02EUR", ]
+
+dfHeads <- dfHeads[dfHeads$person != "TianqiPeng", ]
+dfHeads <- dfHeads[dfHeads$person != "JanYang", ]
+dfHeads <- dfHeads[dfHeads$coin != "0.50SGD", ]
+dfHeads <- dfHeads[dfHeads$coin != "0.01GBP", ]
+
+dfTails <- dfTails[dfTails$person != "TianqiPeng", ]
+dfTails <- dfTails[dfTails$coin != "0.02EUR", ]
+dfTails <- dfTails[dfTails$coin != "0.20CHF", ]
+dfTails <- dfTails[dfTails$coin != "2INR", ]
+
+glmIntercept = glm(cbind(y,m-y)~1,family=binomial,data=df)
+glmTotal = glm(cbind(y,m-y)~1+person+coin,family=binomial,data=df)
+glmPerson = glm(cbind(y,m-y)~1+person,family=binomial,data=df)
+glmCoin = glm(cbind(y,m-y)~1+coin,family=binomial,data=df)
+
 anova(glmIntercept, glmPerson, glmCoin, glmTotal, test = "LRT")
 
 plot(df$mean, fitted(glmTotal))
 abline(c(0,1), col="red")
 abline(lm(df$mean ~ fitted(glmTotal)))
-plot(df$mean, fitted(glmTotal)-df$mean)
-plot(df$coin, fitted(glmTotal)-df$mean)
-plot(df$person, fitted(glmTotal)-df$mean)
+plot(df$mean, resid(glmTotal))
+plot(df$coin, resid(glmTotal))
+plot(df$person, resid(glmTotal))
+plot(fitted(glmTotal), resid(glmTotal))
 
 step(glmTotal, direction = "both", trace = 0)
+
+
+wt = 1/(4*df$m)
+wlsIntercept = lm(formula = mean~1, data=df, weights=wt)
+wlsPerson = lm(formula = mean~1+person, data=df, weights=wt)
+wlsCoin = lm(formula = mean~1+coin, data=df, weights=wt)
+wlsTotal = lm(formula = mean~1+person+coin, data=df, weights=wt)
+
+anova(wlsIntercept, wlsPerson, wlsCoin, wlsTotal)
+
+plot(df$mean, fitted(wlsTotal))
+plot(df$mean, resid(wlsTotal))
+plot(df$coin, resid(wlsTotal))
+plot(df$person, resid(wlsTotal))
+plot(fitted(wlsTotal), resid(wlsTotal))
+
+step(wlsTotal, direction = "both", trace = 0)

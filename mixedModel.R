@@ -25,21 +25,45 @@ df <- df[df$person != "TianqiPeng", ]
 df <- df[df$person != "JanYang", ]
 df <- df[df$coin != "0.50SGD", ]
 df <- df[df$coin != "0.02EUR", ]
+df <- subset(df, !(person == "MagdaMatetovici" & coin == "1CAD"))
+df <- subset(df, !(person == "XiaochangZhao" & coin == "0.50SGD"))
+df <- subset(df, !(person == "FranziskaAssion" & coin == "1EUR"))
+df <- subset(df, !(person == "EJ" & coin == "50CZK"))
+df <- subset(df, !(person == "XiaoyiLin" & coin == "0.50EUR"))
+df <- subset(df, !(person == "JasonNak" & coin == "0.50EUR"))
 
 df_long <- df_long[df_long$person != "TianqiPeng", ]
 df_long <- df_long[df_long$person != "JanYang", ]
 df_long <- df_long[df_long$coin != "0.50SGD", ]
 df_long <- df_long[df_long$coin != "0.02EUR", ]
+df_long <- subset(df_long, !(person == "MagdaMatetovici" & coin == "1CAD"))
+df_long <- subset(df_long, !(person == "XiaochangZhao" & coin == "0.50SGD"))
+df_long <- subset(df_long, !(person == "FranziskaAssion" & coin == "1EUR"))
+df_long <- subset(df_long, !(person == "EJ" & coin == "50CZK"))
+df_long <- subset(df_long, !(person == "XiaoyiLin" & coin == "0.50EUR"))
+df_long <- subset(df_long, !(person == "JasonNak" & coin == "0.50EUR"))
 
 df_time <- df_time[df_time$person != "TianqiPeng", ]
 df_time <- df_time[df_time$person != "JanYang", ]
 df_time <- df_time[df_time$coin != "0.50SGD", ]
 df_time <- df_time[df_time$coin != "0.02EUR", ]
+df_time <- subset(df_time, !(person == "MagdaMatetovici" & coin == "1CAD"))
+df_time <- subset(df_time, !(person == "XiaochangZhao" & coin == "0.50SGD"))
+df_time <- subset(df_time, !(person == "FranziskaAssion" & coin == "1EUR"))
+df_time <- subset(df_time, !(person == "EJ" & coin == "50CZK"))
+df_time <- subset(df_time, !(person == "XiaoyiLin" & coin == "0.50EUR"))
+df_time <- subset(df_time, !(person == "JasonNak" & coin == "0.50EUR"))
 
 df_time_agg <- df_time_agg[df_time_agg$person != "TianqiPeng", ]
 df_time_agg <- df_time_agg[df_time_agg$person != "JanYang", ]
 df_time_agg <- df_time_agg[df_time_agg$coin != "0.50SGD", ]
 df_time_agg <- df_time_agg[df_time_agg$coin != "0.02EUR", ]
+df_time_agg <- subset(df_time_agg, !(person == "MagdaMatetovici" & coin == "1CAD"))
+df_time_agg <- subset(df_time_agg, !(person == "XiaochangZhao" & coin == "0.50SGD"))
+df_time_agg <- subset(df_time_agg, !(person == "FranziskaAssion" & coin == "1EUR"))
+df_time_agg <- subset(df_time_agg, !(person == "EJ" & coin == "50CZK"))
+df_time_agg <- subset(df_time_agg, !(person == "XiaoyiLin" & coin == "0.50EUR"))
+df_time_agg <- subset(df_time_agg, !(person == "JasonNak" & coin == "0.50EUR"))
 
 sampled_data <- df_time_agg %>%
   group_by(person, coin) %>%
@@ -67,28 +91,32 @@ df_time_agg <- df_time_agg %>%
   ))
 
 #MIXED MODEL
-mixedTotal <- lmer(avg~person + coin + (1|hundred_group), data=df_time_agg)
-mixedTotalNested <- lmer(avg~person/coin + (1|hundred_group), data=df_time_agg)
-mixedPerson <- lmer(avg~person + (1|hundred_group), data=df_time_agg)
+mixedIntercept <- lmer(avg~1 + (1|hundred_group), data=df_time_agg)
+mixedTotal <- lmer(avg~1 + person + coin + (1|hundred_group), data=df_time_agg)
+mixedTotalNested <- lmer(avg~1 + person/coin + (1|hundred_group), data=df_time_agg)
+mixedPerson <- lmer(avg~1 + person + (1|hundred_group), data=df_time_agg)
 
-anova(mixedPerson, mixedTotal, mixedTotalNested)
+anova(mixedIntercept, mixedPerson, mixedTotal, mixedTotalNested)
 
 print("AIC:")
+AIC(mixedIntercept)
 AIC(mixedPerson)
 AIC(mixedTotal)
 AIC(mixedTotalNested)
 
 print("AICc:")
+AICc(mixedIntercept)
 AICc(mixedPerson)
 AICc(mixedTotal)
 AICc(mixedTotalNested)
 
 print("BIC")
+BIC(mixedIntercept)
 BIC(mixedPerson)
 BIC(mixedTotal)
 BIC(mixedTotalNested)
 
-mixed_model <- lmer(avg~person + (1|hundred_group), data=df_time_agg)
+mixed_model <- lmer(avg~(1|hundred_group), data=df_time_agg)
 summary(mixed_model)
 
 plot(fitted(mixed_model), resid(mixed_model))

@@ -9,6 +9,18 @@ start <- rep(c("heads","tails"),c(n,n))
 df <- rbind(dfHeads,dfTails)
 df$person <- factor(df$person); df$coin <- factor(df$coin); df$start <- factor(start)
 
+percentages <- df %>%
+  group_by(person, coin) %>%
+  summarise(
+    success_total = 100 * sum(y) / sum(m),                                     # Pourcentage total
+    success_heads = 100 * sum(y[start == "heads"]) / sum(m[start == "heads"]), # Pourcentage pour heads 
+    success_tails = 100 * sum(y[start == "tails"]) / sum(m[start == "tails"]),
+    m = sum(m)# Pourcentage pour tails
+  ) %>%
+  pivot_longer(cols = starts_with("success"), names_to = "type", values_to = "percentage")
+
+percentagesTotal <- percentages[percentages$type == 'success_total', ]
+
 dfStart <- df
 dfStart <- dfStart %>%
        group_by(start) %>%
@@ -122,6 +134,14 @@ hist(dfCoinHeads$mean)
 hist(dfCoinTails$mean)
 boxplot(df$mean, dfHeads$mean, dfTails$mean, dfPerson$mean, dfPersonHeads$mean, dfPersonTails$mean, dfCoin$mean, dfCoinHeads$mean, dfCoinTails$mean, names=c('Total', 'TotalHeads', 'TotalTails', 'Person', 'PersonHeads', 'PersonTails', 'Coin', 'CoinHeads', 'CoinTails'), main='Distribution of success probabilities')
 
+modelTotal = lm(mean~1+person+coin, data=df)
+plot(df$person, rstandard(modelTotal))
+plot(df$coin, rstandard(modelTotal))
+plot(fitted(modelTotal), rstandard(modelTotal))
+qqnorm(rstandard(modelTotal), pch = 1, frame = FALSE)
+qqline(rstandard(modelTotal), col = "steelblue", lwd = 2)
+plot(modelTotal, 4)
+
 #Remove outliers
 df <- df[df$person != "TianqiPeng", ]
 df <- df[df$person != "JanYang", ]
@@ -143,7 +163,7 @@ glmTotal = glm(cbind(y,m-y)~1+person+coin,family=binomial,data=df)
 glmPerson = glm(cbind(y,m-y)~1+person,family=binomial,data=df)
 glmCoin = glm(cbind(y,m-y)~1+coin,family=binomial,data=df)
 
-anova(glmIntercept, glmPerson, glmCoin, glmTotal, test = "LRT")
+anova(glmIntercept, glmPerson, glmCoin, glmTotal)
 
 plot(df$mean, fitted(glmTotal))
 abline(c(0,1), col="red")
@@ -155,6 +175,19 @@ plot(fitted(glmTotal), resid(glmTotal))
 
 step(glmTotal, direction = "both", trace = 0)
 
+glmTotalNested = glm(cbind(y,m-y)~1+coin/person,family=binomial,data=df)
+
+anova(glmIntercept, glmPerson, glmCoin, glmTotalNested)
+
+plot(df$mean, fitted(glmTotalNested))
+abline(c(0,1), col="red")
+abline(lm(df$mean ~ fitted(glmTotalNested)))
+plot(df$mean, resid(glmTotalNested))
+plot(df$coin, resid(glmTotalNested))
+plot(df$person, resid(glmTotalNested))
+plot(fitted(glmTotalNested), resid(glmTotalNested))
+
+#step(glmTotalNested, direction = "both", trace = 0)
 
 wt = 1/(4*df$m)
 wlsIntercept = lm(formula = mean~1, data=df, weights=wt)
@@ -171,3 +204,15 @@ plot(df$person, resid(wlsTotal))
 plot(fitted(wlsTotal), resid(wlsTotal))
 
 step(wlsTotal, direction = "both", trace = 0)
+
+wlsTotalNested = lm(formula = mean~1+coin/person, data=df, weights=wt)
+
+anova(wlsIntercept, wlsPerson, wlsCoin, wlsTotalNested)
+
+plot(df$mean, fitted(wlsTotalNested))
+plot(df$mean, resid(wlsTotalNested))
+plot(df$coin, resid(wlsTotalNested))
+plot(df$person, resid(wlsTotalNested))
+plot(fitted(wlsTotalNested), resid(wlsTotalNested))
+
+#step(wlsTotalNested, direction = "both", trace = 0)
